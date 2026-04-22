@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import * as SecureStore from 'expo-secure-store';
+import * as storage from '../utils/storage';
 
 interface AuthState {
   isLocked: boolean;
@@ -17,17 +17,17 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   hasPinSet: false,
 
   checkPinSet: async () => {
-    const pin = await SecureStore.getItemAsync(PIN_KEY);
+    const pin = await storage.getItemAsync(PIN_KEY);
     set({ hasPinSet: !!pin });
   },
 
   setPin: async (pin: string) => {
-    await SecureStore.setItemAsync(PIN_KEY, pin);
+    await storage.setItemAsync(PIN_KEY, pin);
     set({ hasPinSet: true, isLocked: false });
   },
 
   unlock: async (inputPin: string) => {
-    const storedPin = await SecureStore.getItemAsync(PIN_KEY);
+    const storedPin = await storage.getItemAsync(PIN_KEY);
     if (storedPin === inputPin) {
       set({ isLocked: false });
       return true;
@@ -37,3 +37,4 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   lock: () => set({ isLocked: true }),
 }));
+
