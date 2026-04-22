@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 const isWeb = Platform.OS === 'web';
 
 export const getItemAsync = async (key: string): Promise<string | null> => {
-  if (isWeb) {
+  if (isWeb && typeof window !== 'undefined') {
     try {
       return localStorage.getItem(key);
     } catch (e) {
@@ -12,11 +12,14 @@ export const getItemAsync = async (key: string): Promise<string | null> => {
       return null;
     }
   }
-  return await SecureStore.getItemAsync(key);
+  if (!isWeb) {
+    return await SecureStore.getItemAsync(key);
+  }
+  return null;
 };
 
 export const setItemAsync = async (key: string, value: string): Promise<void> => {
-  if (isWeb) {
+  if (isWeb && typeof window !== 'undefined') {
     try {
       localStorage.setItem(key, value);
     } catch (e) {
@@ -24,11 +27,13 @@ export const setItemAsync = async (key: string, value: string): Promise<void> =>
     }
     return;
   }
-  await SecureStore.setItemAsync(key, value);
+  if (!isWeb) {
+    await SecureStore.setItemAsync(key, value);
+  }
 };
 
 export const deleteItemAsync = async (key: string): Promise<void> => {
-  if (isWeb) {
+  if (isWeb && typeof window !== 'undefined') {
     try {
       localStorage.removeItem(key);
     } catch (e) {
@@ -36,5 +41,8 @@ export const deleteItemAsync = async (key: string): Promise<void> => {
     }
     return;
   }
-  await SecureStore.deleteItemAsync(key);
+  if (!isWeb) {
+    await SecureStore.deleteItemAsync(key);
+  }
 };
+

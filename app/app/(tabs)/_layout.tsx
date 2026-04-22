@@ -5,8 +5,11 @@ import { HapticTab } from '@/components/haptic-tab';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { TouchableOpacity } from 'react-native';
+import { useAuthStore } from '../../store/useAuthStore';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -39,8 +42,17 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           tabBarIcon: ({ color }: { color: string }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          headerRight: () => (
+            <TouchableOpacity 
+              onPress={() => useAuthStore.getState().signOut()}
+              style={{ marginRight: 20 }}
+            >
+              <IconSymbol size={24} name="rectangle.portrait.and.arrow.right" color="#f87171" />
+            </TouchableOpacity>
+          ),
         }}
       />
+
       <Tabs.Screen
         name="plots"
         options={{

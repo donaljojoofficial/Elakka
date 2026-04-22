@@ -1,40 +1,35 @@
 import { create } from 'zustand';
-import * as storage from '../utils/storage';
+import { supabase } from '../utils/supabase';
+import { Session, User } from '@supabase/supabase-js';
 
 interface AuthState {
-  isLocked: boolean;
-  hasPinSet: boolean;
-  checkPinSet: () => Promise<void>;
-  setPin: (pin: string) => Promise<void>;
-  unlock: (pin: string) => Promise<boolean>;
-  lock: () => void;
+  session: Session | null;
+  user: User | null;
+  isLoading: boolean;
+  setSession: (session: Session | null) => void;
+  signOut: () => Promise<void>;
+  checkSession: () => Promise<void>;
 }
 
-const PIN_KEY = 'elakka_auth_pin';
+export const useAuthStore = create<AuthState>((set) => ({
+  session: null,
+  user: null,
+  isLoading: true,
 
-export const useAuthStore = create<AuthState>((set, get) => ({
-  isLocked: true,
-  hasPinSet: false,
-
-  checkPinSet: async () => {
-    const pin = await storage.getItemAsync(PIN_KEY);
-    set({ hasPinSet: !!pin });
+  setSession: (session) => {
+    set({ session, user: session?.user ?? null, isLoading: false });
   },
 
-  setPin: async (pin: string) => {
-    await storage.setItemAsync(PIN_KEY, pin);
-    set({ hasPinSet: true, isLocked: false });
+  checkSession: async () => {
+    set({ isLoading: true });
+    const { data: { session } } = await supabase.auth.getSession();
+    set({ session, user: session?.user ?? null, isLoading: false });
   },
 
-  unlock: async (inputPin: string) => {
-    const storedPin = await storage.getItemAsync(PIN_KEY);
-    if (storedPin === inputPin) {
-      set({ isLocked: false });
-      return true;
-    }
-    return false;
+  signOut: async () => {
+    await supabase.auth.signOut();
+    set({ session: null, user: null });
   },
-
-  lock: () => set({ isLocked: true }),
 }));
+
 
