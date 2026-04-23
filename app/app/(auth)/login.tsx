@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
+import * as WebBrowser from 'expo-web-browser';
 import { View, Text, TextInput, TouchableOpacity, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { supabase } from '../../utils/supabase';
 import { ChevronLeft, Mail, Lock, LogIn, Globe } from 'lucide-react-native';
+import * as Linking from 'expo-linking';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
+
+WebBrowser.maybeCompleteAuthSession();
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -24,16 +28,37 @@ export default function LoginScreen() {
   }
 
   async function signInWithGoogle() {
-    // Note: Google Auth requires additional setup in Supabase and Google Cloud Console
-    // This is the trigger for the flow
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: Platform.OS === 'web' ? window.location.origin : 'app://google-auth',
-      },
-    });
-    
-    if (error) Alert.alert(error.message);
+    setLoading(true);
+    const redirectUrl = Linking.createURL('(auth)/login');
+    console.log('Google Auth: Using redirect URL:', redirectUrl);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: redirectUrl,
+          skipBrowserRedirect: true,
+        },
+      });
+      
+      console.log('Google Auth: signInWithOAuth result:', { url: data?.url, error });
+      if (error) throw error;
+
+      if (data?.url) {
+        console.log('Google Auth: Opening browser session...');
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+        console.log('Google Auth: Browser session result:', result.type);
+        if (result.type === 'success' && result.url) {
+          // The onAuthStateChange in _layout.tsx will handle the session once the app is refocused
+        }
+      } else {
+        console.log('Google Auth: No URL returned from Supabase');
+      }
+    } catch (error: any) {
+      Alert.alert('Google Sign-In Error', error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (

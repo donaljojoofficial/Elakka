@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, RefreshControl } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useDatabase } from '../../database/db';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../../components/ui/card';
+import { Card } from '../../components/ui/card';
 import { Trees, MapPin, Droplets, TrendingUp, AlertTriangle, ChevronLeft } from 'lucide-react-native';
 
 interface PlotDetails {
@@ -29,21 +29,24 @@ export default function PlotDetailScreen() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const fetchDetails = async () => {
+  async function fetchDetails() {
+    const plotId = Array.isArray(id) ? id[0] : id;
+    if (!plotId) return;
+
     try {
       // 1. Fetch Plot Info
-      const plotRes = await db.getFirstAsync<PlotDetails>('SELECT * FROM plots WHERE id = ?', [id]);
+      const plotRes = await db.getFirstAsync<PlotDetails>('SELECT * FROM plots WHERE id = ?', [plotId]);
       setPlot(plotRes);
 
       // 2. Fetch combined activity history
       const treatments = await db.getAllAsync<any>(
-        'SELECT id, type, date, notes FROM treatments WHERE plot_id = ?', [id]
+        'SELECT id, type, date, notes FROM treatments WHERE plot_id = ?', [plotId]
       );
       const yields = await db.getAllAsync<any>(
-        'SELECT id, quantity_kg as type, date, notes FROM yields WHERE plot_id = ?', [id]
+        'SELECT id, quantity_kg as type, date, notes FROM yields WHERE plot_id = ?', [plotId]
       );
       const problems = await db.getAllAsync<any>(
-        'SELECT id, type, date_identified as date, notes FROM problems WHERE plot_id = ?', [id]
+        'SELECT id, type, date_identified as date, notes FROM problems WHERE plot_id = ?', [plotId]
       );
 
       const combined: Activity[] = [
@@ -56,7 +59,7 @@ export default function PlotDetailScreen() {
     } catch (error) {
       console.error('Error fetching plot details:', error);
     }
-  };
+  }
 
   useEffect(() => {
     fetchDetails();

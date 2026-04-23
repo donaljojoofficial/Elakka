@@ -21,9 +21,21 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   checkSession: async () => {
+    console.log('AUTH: checkSession starting...');
     set({ isLoading: true });
-    const { data: { session } } = await supabase.auth.getSession();
-    set({ session, user: session?.user ?? null, isLoading: false });
+    try {
+      console.log('AUTH: Fetching session from Supabase...');
+      const { data, error } = await supabase.auth.getSession();
+      if (error) {
+        console.error('AUTH: getSession error:', error);
+      }
+      const session = data?.session;
+      console.log('AUTH: getSession success, session exists:', !!session);
+      set({ session, user: session?.user ?? null, isLoading: false });
+    } catch (error) {
+      console.error('AUTH: checkSession unexpected error:', error);
+      set({ isLoading: false });
+    }
   },
 
   signOut: async () => {
